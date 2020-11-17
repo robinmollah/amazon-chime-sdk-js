@@ -23,6 +23,7 @@ export default interface VideoTransformDevice {
    */
   applyProcessors(mediaStream?: MediaStream): Promise<MediaStream>;
 
+  onOutputStreamDisconnect(): void;
   /**
    * `outputMediaStream` is generated after processors are applied. It will be auto-released after `stop` is called.
    */
