@@ -568,7 +568,7 @@ export default class DefaultDeviceController implements DeviceControllerBasedMed
   }
 
   private async updateDeviceInfoCacheFromBrowser(): Promise<void> {
-    const doesNotHaveAccessToMediaDevices = !MediaDeviceInfo;
+    const doesNotHaveAccessToMediaDevices = typeof MediaDeviceInfo === 'undefined';
     if (doesNotHaveAccessToMediaDevices) {
       this.deviceInfoCache = [];
       return;
@@ -799,6 +799,10 @@ export default class DefaultDeviceController implements DeviceControllerBasedMed
     device: Device,
     fromAcquire: boolean
   ): Promise<void> {
+    if (device === undefined) {
+      throw new Error('Undefined device');
+    }
+
     this.inputDeviceCount += 1;
     const callCount = this.inputDeviceCount;
 
