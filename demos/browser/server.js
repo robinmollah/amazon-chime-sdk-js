@@ -15,7 +15,7 @@ const meetingTable = {};
 const host = '127.0.0.1:8080';
 
 // Load the contents of the web application to be used as the index page
-const indexPage = fs.readFileSync(`dist/${process.env.npm_config_app || 'meetingV2'}.html`);
+const indexPage = fs.readFileSync(`dist/${process.env.npm_config_app || 'meetingV3'}.html`);
 
 // Create ans AWS SDK Chime object. Region 'us-east-1' is currently required.
 // Use the MediaRegion property below in CreateMeeting to select the region

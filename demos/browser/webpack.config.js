@@ -7,7 +7,7 @@ var HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin')
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 /* eslint-enable */
 
-const app = process.env.npm_config_app || 'meetingV2';
+const app = process.env.npm_config_app || 'meetingV3';
 
 module.exports = env => {
   return {
