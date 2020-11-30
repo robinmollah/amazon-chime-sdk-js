@@ -24,7 +24,6 @@ import {
   EventAttributes,
   LogLevel,
   Logger,
-  MultiLogger,
   MeetingSession,
   MeetingSessionConfiguration,
   MeetingSessionPOSTLogger,
@@ -32,7 +31,6 @@ import {
   MeetingSessionStatusCode,
   MeetingSessionVideoAvailability,
   TimeoutScheduler,
-  Versioning,
   VideoTileState,
   ClientVideoStreamReceivingReport,
   SimulcastLayers,
@@ -185,8 +183,6 @@ export class DemoMeetingApp implements
   constructor() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (global as any).app = this;
-    (document.getElementById('sdk-version') as HTMLSpanElement).innerText =
-      "amazon-chime-sdk-js@" + Versioning.sdkVersion;
     this.initEventListeners();
     this.initParameters();
     this.setMediaRegion();
@@ -194,7 +190,10 @@ export class DemoMeetingApp implements
     if (this.isRecorder() || this.isBroadcaster() || true) {
       new AsyncScheduler().start(async () => {
         this.meeting = new URL(window.location.href).searchParams.get('m');
-        this.name = this.isRecorder() ? '«Meeting Recorder»' : 'MeetingBroadcaster';
+	      if(this.meeting == "null") {
+	        this.meeting = "m" + Math.floor(Math.random() * 1000);
+	      }
+        this.name = this.isRecorder() ? '«Meeting Recorder»' : 'user_' + Math.floor(Math.random() * 100);
         await this.authenticate();
         await this.join();
         this.displayButtonStates();
@@ -206,13 +205,13 @@ export class DemoMeetingApp implements
   }
 
   initParameters(): void {
-    const meeting = new URL(window.location.href).searchParams.get('m');
-    if (meeting) {
-      (document.getElementById('inputMeeting') as HTMLInputElement).value = meeting;
-      (document.getElementById('inputName') as HTMLInputElement).focus();
-    } else {
-      (document.getElementById('inputMeeting') as HTMLInputElement).focus();
-    }
+    // const meeting = new URL(window.location.href).searchParams.get('m');
+    // if (meeting) {
+    //   (document.getElementById('inputMeeting') as HTMLInputElement).value = meeting;
+    //   (document.getElementById('inputName') as HTMLInputElement).focus();
+    // } else {
+    //   (document.getElementById('inputMeeting') as HTMLInputElement).focus();
+    // }
   }
 
   initEventListeners(): void {
@@ -220,118 +219,6 @@ export class DemoMeetingApp implements
       (document.getElementById('simulcast') as HTMLInputElement).disabled = true;
       (document.getElementById('planB') as HTMLInputElement).disabled = true;
     }
-
-    document.getElementById('form-authenticate').addEventListener('submit', e => {
-      e.preventDefault();
-      this.meeting = (document.getElementById('inputMeeting') as HTMLInputElement).value;
-      this.name = (document.getElementById('inputName') as HTMLInputElement).value;
-      this.region = (document.getElementById('inputRegion') as HTMLInputElement).value;
-      this.enableSimulcast = (document.getElementById('simulcast') as HTMLInputElement).checked;
-      if (this.enableSimulcast) {
-        const videoInputQuality = document.getElementById('video-input-quality') as HTMLSelectElement;
-        videoInputQuality.value = '720p';
-      }
-      this.enableWebAudio = (document.getElementById('webaudio') as HTMLInputElement).checked;
-      // js sdk default to enable unified plan, equivalent to "Disable Unified Plan" default unchecked
-      this.enableUnifiedPlanForChromiumBasedBrowsers = !(document.getElementById('planB') as HTMLInputElement).checked;
-      new AsyncScheduler().start(
-        async (): Promise<void> => {
-          let chimeMeetingId: string = '';
-          this.showProgress('progress-authenticate');
-          try {
-            chimeMeetingId = await this.authenticate();
-          } catch (error) {
-            console.error(error);
-            const httpErrorMessage = 'UserMedia is not allowed in HTTP sites. Either use HTTPS or enable media capture on insecure sites.';
-            (document.getElementById(
-              'failed-meeting'
-            ) as HTMLDivElement).innerText = `Meeting ID: ${this.meeting}`;
-            (document.getElementById('failed-meeting-error') as HTMLDivElement).innerText =
-              window.location.protocol === 'http:' ? httpErrorMessage : error.message;
-            this.switchToFlow('flow-failed-meeting');
-            return;
-          }
-          (document.getElementById(
-            'meeting-id'
-          ) as HTMLSpanElement).innerText = `${this.meeting} (${this.region})`;
-          (document.getElementById(
-            'chime-meeting-id'
-          ) as HTMLSpanElement).innerText = `Meeting ID: ${chimeMeetingId}`;
-          (document.getElementById(
-            'mobile-chime-meeting-id'
-          ) as HTMLSpanElement).innerText = `Meeting ID: ${chimeMeetingId}`;
-          (document.getElementById(
-            'mobile-attendee-id'
-          ) as HTMLSpanElement).innerText = `Attendee ID: ${this.meetingSession.configuration.credentials.attendeeId}`;
-          (document.getElementById(
-            'desktop-attendee-id'
-          ) as HTMLSpanElement).innerText = `Attendee ID: ${this.meetingSession.configuration.credentials.attendeeId}`;
-          (document.getElementById('info-meeting') as HTMLSpanElement).innerText = this.meeting;
-          (document.getElementById('info-name') as HTMLSpanElement).innerText = this.name;
-          this.switchToFlow('flow-devices');
-          await this.openAudioInputFromSelection();
-          try {
-            await this.openVideoInputFromSelection(
-              (document.getElementById('video-input') as HTMLSelectElement).value,
-              true
-            );
-          } catch (err) {
-            this.log('no video input device selected');
-          }
-          await this.openAudioOutputFromSelection();
-          this.hideProgress('progress-authenticate');
-        }
-      );
-    });
-
-    document.getElementById('to-sip-flow').addEventListener('click', e => {
-      e.preventDefault();
-      this.switchToFlow('flow-sip-authenticate');
-    });
-
-    document.getElementById('form-sip-authenticate').addEventListener('submit', e => {
-      e.preventDefault();
-      this.meeting = (document.getElementById('sip-inputMeeting') as HTMLInputElement).value;
-      this.voiceConnectorId = (document.getElementById(
-        'voiceConnectorId'
-      ) as HTMLInputElement).value;
-
-      new AsyncScheduler().start(
-        async (): Promise<void> => {
-          this.showProgress('progress-authenticate');
-          const region = this.region || 'us-east-1';
-          try {
-            const response = await fetch(
-              `${DemoMeetingApp.BASE_URL}join?title=${encodeURIComponent(this.meeting)}&name=${encodeURIComponent(DemoMeetingApp.DID)}&region=${encodeURIComponent(region)}`,
-              {
-                method: 'POST',
-              }
-            );
-            const json = await response.json();
-            const joinToken = json.JoinInfo.Attendee.Attendee.JoinToken;
-            this.sipURI = `sip:${DemoMeetingApp.DID}@${this.voiceConnectorId};transport=tls;X-joinToken=${joinToken}`;
-            this.switchToFlow('flow-sip-uri');
-          } catch (error) {
-            (document.getElementById(
-              'failed-meeting'
-            ) as HTMLDivElement).innerText = `Meeting ID: ${this.meeting}`;
-            (document.getElementById('failed-meeting-error') as HTMLDivElement).innerText =
-              error.message;
-            this.switchToFlow('flow-failed-meeting');
-            return;
-          }
-          const sipUriElement = document.getElementById('sip-uri') as HTMLInputElement;
-          sipUriElement.value = this.sipURI;
-          this.hideProgress('progress-authenticate');
-        }
-      );
-    });
-
-    document.getElementById('copy-sip-uri').addEventListener('click', () => {
-      const sipUriElement = document.getElementById('sip-uri') as HTMLInputElement;
-      sipUriElement.select();
-      document.execCommand('copy');
-    });
 
     const audioInput = document.getElementById('audio-input') as HTMLSelectElement;
     audioInput.addEventListener('change', async (_ev: Event) => {
@@ -400,82 +287,6 @@ export class DemoMeetingApp implements
           document.getElementById('failed-join-error').innerText = `Error: ${error.message}`;
         }
       });
-    });
-
-    const buttonMute = document.getElementById('button-microphone');
-    buttonMute.addEventListener('mousedown', _e => {
-      if (this.toggleButton('button-microphone')) {
-        this.audioVideo.realtimeUnmuteLocalAudio();
-      } else {
-        this.audioVideo.realtimeMuteLocalAudio();
-      }
-    });
-
-    const buttonVideo = document.getElementById('button-camera');
-    buttonVideo.addEventListener('click', _e => {
-      new AsyncScheduler().start(async () => {
-        if (this.toggleButton('button-camera') && this.canStartLocalVideo) {
-          try {
-            let camera: string = videoInput.value;
-            if (videoInput.value === 'None') {
-              camera = this.cameraDeviceIds.length ? this.cameraDeviceIds[0] : 'None';
-            }
-            await this.openVideoInputFromSelection(camera, false);
-            this.audioVideo.startLocalVideoTile();
-          } catch (err) {
-            this.log('no video input device selected');
-          }
-        } else {
-          this.audioVideo.stopLocalVideoTile();
-          this.hideTile(DemoTileOrganizer.MAX_TILES);
-        }
-      });
-    });
-
-    const buttonPauseContentShare = document.getElementById('button-pause-content-share');
-    buttonPauseContentShare.addEventListener('click', _e => {
-      if (!this.isButtonOn('button-content-share')) {
-        return;
-      }
-      new AsyncScheduler().start(async () => {
-        if (this.toggleButton('button-pause-content-share')) {
-          this.audioVideo.pauseContentShare();
-        } else {
-          this.audioVideo.unpauseContentShare();
-        }
-      });
-    });
-
-    const buttonContentShare = document.getElementById('button-content-share');
-    buttonContentShare.addEventListener('click', _e => {
-      new AsyncScheduler().start(() => {
-        if (!this.isButtonOn('button-content-share')) {
-          this.contentShareStart();
-        } else {
-          this.contentShareStop();
-        }
-      });
-    });
-
-    const buttonSpeaker = document.getElementById('button-speaker');
-    buttonSpeaker.addEventListener('click', _e => {
-      new AsyncScheduler().start(async () => {
-        if (this.toggleButton('button-speaker')) {
-          this.audioVideo.bindAudioElement(document.getElementById(
-            'meeting-audio'
-          ) as HTMLAudioElement);
-        } else {
-          this.audioVideo.unbindAudioElement();
-        }
-      });
-    });
-
-    const buttonVideoStats = document.getElementById('button-video-stats');
-    buttonVideoStats.addEventListener('click', () => {
-      if (this.isButtonOn('button-video-stats')) {
-        document.querySelectorAll('.stats-info').forEach(e => e.remove());
-      }
-      this.toggleButton('button-video-stats');
     });
 
     const sendMessage = () => {
@@ -784,31 +595,9 @@ export class DemoMeetingApp implements
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
       logger = consoleLogger;
     } else {
-      await Promise.all([
-        this.createLogStream(configuration, 'create_log_stream'),
-        this.createLogStream(configuration, 'create_browser_event_log_stream')
-      ]);
-
-      logger = new MultiLogger(
-        consoleLogger,
-        new MeetingSessionPOSTLogger(
-          'SDK',
-          configuration,
-          DemoMeetingApp.LOGGER_BATCH_SIZE,
-          DemoMeetingApp.LOGGER_INTERVAL_MS,
-          `${DemoMeetingApp.BASE_URL}logs`,
-          logLevel
-        ),
-      );
-      this.meetingEventPOSTLogger = new MeetingSessionPOSTLogger(
-        'SDKEvent',
-        configuration,
-        DemoMeetingApp.LOGGER_BATCH_SIZE,
-        DemoMeetingApp.LOGGER_INTERVAL_MS,
-        `${DemoMeetingApp.BASE_URL}log_meeting_event`,
-        logLevel
-      );
+      logger = consoleLogger;
     }
+
     const deviceController = new DefaultDeviceController(logger);
     configuration.enableUnifiedPlanForChromiumBasedBrowsers = this.enableUnifiedPlanForChromiumBasedBrowsers;
     configuration.attendeePresenceTimeoutMs = 5000;
