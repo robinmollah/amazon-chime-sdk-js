@@ -5,26 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
   <title>PXL-ICE Meeting Demo</title>
+  <script>
+    navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function(stream) {
+              console.log('You let me use your mic!')
+            })
+            .catch(function(err) {
+              console.log('No mic for you!')
+            });
+  </script>
 </head>
 <body>
-
-<!-- Failure card if meeting is invalid -->
-
-<div id="flow-failed-meeting" class="flow">
-  <div class="container">
-    <form id="form-failed-meeting">
-      <div class="card border-warning mb-3" style="max-width: 20rem;">
-        <div id="failed-meeting" class="card-header"></div>
-        <div class="card-body">
-          <h4 class="card-title">Unable to find meeting</h4>
-          <p class="card-text">There was an issue finding that meeting. The meeting may have already ended, or your authorization may have expired.</p>
-          <small id="failed-meeting-error" class="text-muted"></small>
-        </div>
-      </div>
-      <button class="btn btn-lg btn-outline-warning btn-block" type="submit">OK</button>
-    </form>
-  </div>
-</div>
 
 <!-- Device management and preview screen -->
 

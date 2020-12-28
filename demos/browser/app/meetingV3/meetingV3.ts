@@ -30,8 +30,7 @@ import {
   MeetingSessionStatusCode,
   TimeoutScheduler,
   ClientVideoStreamReceivingReport,
-  SimulcastLayers,
-  VideoSource
+  SimulcastLayers
 } from '../../../../src/index';
 import WebRTCStatsCollector from './webrtcstatscollector/WebRTCStatsCollector';
 import {initRoomListeners} from "./rooms";
@@ -927,10 +926,6 @@ export class DemoMeetingApp implements
     this.log('connection is good now');
   }
 
-  videoSendDidBecomeUnavailable(): void {
-    this.log('sending video is not available');
-  }
-
   contentShareDidStart(): void {
     this.log('content share started.');
   }
@@ -947,9 +942,6 @@ export class DemoMeetingApp implements
     this.log(`current active simulcast layers changed to: ${SimulcastLayerMapping[simulcastLayers]}`);
   }
 
-  remoteVideoSourcesDidChange(videoSources: VideoSource[]) {
-    this.log(`available remote video sources changed: ${JSON.stringify(videoSources)}`);
-  }
 }
 
 window.addEventListener('load', () => {
