@@ -112,6 +112,7 @@ function log(message) {
 function respond(response, statusCode, contentType, body, skipLogging = false) {
   response.statusCode = statusCode;
   response.setHeader('Content-Type', contentType);
+  response.setHeader('Access-Control-Allow-Origin', "*");
   response.end(body);
   if (contentType === 'application/json' && !skipLogging) {
     log(body);

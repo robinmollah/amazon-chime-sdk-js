@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /* eslint-disable */
-var webpack = require('webpack');
-var HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin');
-var HtmlWebpackPlugin = require('html-webpack-plugin');
+let webpack = require('webpack');
+let HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin');
+let HtmlWebpackPlugin = require('html-webpack-plugin');
 /* eslint-enable */
 
 const app = process.env.npm_config_app || 'meetingV3';
