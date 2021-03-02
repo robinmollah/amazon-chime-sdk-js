@@ -2,6 +2,9 @@
 const AWS = require('aws-sdk');
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
+const _database = require("./database");
+
+const DB = new _database();
 const app = express();
 const port = 8081;
 const domain_name = "routing.eagle3dstreaming.com";
@@ -64,12 +67,25 @@ app.post('/join', async (req, res) => {
 
 	// Return the meeting and attendee responses. The client will use these
 	// to join the meeting.
+	DB.insertUser(req.query.name, req.query.title, Date.now());
 	res.json({
 		JoinInfo: {
 			Meeting: meeting,
 			Attendee: attendee,
 		},
 	});
+});
+
+app.get('/left', (req, res) => {
+	const username = req.query.name;
+	const room = req.query.room;
+	DB.leaveUser(username, Date.now());
+	res.json({status: false, message: `Needs to implement the function. Ask robinsajin.`});
+	// res.json({status: true, message: `${username} left the room ${room}`});
+});
+
+app.get('/clients', (req, res) => {
+	res.json(DB.getUsers());
 });
 
 app.post('/end', async (req, res) => {
